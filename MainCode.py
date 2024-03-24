@@ -1,14 +1,51 @@
 import os
 import xml.etree.ElementTree as ET
 
+class Nodo:
+    def __init__(self, dato):
+        self.dato = dato
+        self.siguiente = None
+
+class ListaEnlazada:
+    def __init__(self):
+        self.cabeza = None
+        self.cola = None
+
+    def esta_vacia(self):
+        return self.cabeza is None
+
+    def agregar(self, dato):
+        nuevo_nodo = Nodo(dato)
+        if self.esta_vacia():
+            self.cabeza = nuevo_nodo
+            self.cola = nuevo_nodo
+        else:
+            self.cola.siguiente = nuevo_nodo
+            self.cola = nuevo_nodo
+
+    def mostrar(self):
+        nodo_actual = self.cabeza
+        while nodo_actual is not None:
+            print(nodo_actual.dato)
+            nodo_actual = nodo_actual.siguiente
+
+    def obtener_lista_ordenada(self):
+        lista_ordenada = []
+        nodo_actual = self.cabeza
+        while nodo_actual is not None:
+            lista_ordenada.append(nodo_actual.dato)
+            nodo_actual = nodo_actual.siguiente
+        lista_ordenada.sort(key=lambda maqueta: maqueta.nombre)
+        return lista_ordenada
+
 class Maqueta:
-    def __init__(self, nombre, filas, columnas, entrada_fila, entrada_columna, objetivos, estructura):
+    def __init__(self, nombre, filas, columnas, entrada_fila, entrada_columna, estructura):
         self.nombre = nombre
         self.filas = int(filas)
         self.columnas = int(columnas)
         self.entrada_fila = int(entrada_fila)
         self.entrada_columna = int(entrada_columna)
-        self.objetivos = objetivos
+        self.objetivos = ListaEnlazada()
         self.estructura = estructura
 
 class Objetivo:
@@ -17,12 +54,12 @@ class Objetivo:
         self.fila = int(fila)
         self.columna = int(columna)
 
+maquetas_cargadas = ListaEnlazada()
+
 def cargar_archivo_xml(nombre_archivo):
     try:
         tree = ET.parse(nombre_archivo)
         root = tree.getroot()
-
-        maquetas = []
 
         for maqueta_xml in root.findall('maquetas/maqueta'):
             nombre = maqueta_xml.find('nombre')
@@ -60,32 +97,6 @@ def cargar_archivo_xml(nombre_archivo):
                 print(f"Error: La columna de entrada de la maqueta '{nombre}' no está definida correctamente.")
                 continue
 
-            objetivos = []
-            for objetivo_xml in maqueta_xml.findall('objetivos/objetivo'):
-                nombre_objetivo = objetivo_xml.find('nombre')
-                if nombre_objetivo is not None and nombre_objetivo.text is not None:
-                    nombre_objetivo = nombre_objetivo.text
-                else:
-                    print(f"Error: El nombre de un objetivo de la maqueta '{nombre}' no está definido correctamente.")
-                    continue
-
-                fila_objetivo = objetivo_xml.find('fila')
-                if fila_objetivo is not None and fila_objetivo.text is not None:
-                    fila_objetivo = fila_objetivo.text
-                else:
-                    print(f"Error: La fila de un objetivo de la maqueta '{nombre}' no está definida correctamente.")
-                    continue
-
-                columna_objetivo = objetivo_xml.find('columna')
-                if columna_objetivo is not None and columna_objetivo.text is not None:
-                    columna_objetivo = columna_objetivo.text
-                else:
-                    print(f"Error: La columna de un objetivo de la maqueta '{nombre}' no está definida correctamente.")
-                    continue
-
-                objetivo = Objetivo(nombre_objetivo, fila_objetivo, columna_objetivo)
-                objetivos.append(objetivo)
-
             estructura = maqueta_xml.find('estructura')
             if estructura is not None and estructura.text is not None:
                 estructura = estructura.text
@@ -93,22 +104,37 @@ def cargar_archivo_xml(nombre_archivo):
                 print(f"Error: La estructura de la maqueta '{nombre}' no está definida correctamente.")
                 continue
 
-            maqueta = Maqueta(nombre, filas, columnas, entrada_fila, entrada_columna, objetivos, estructura)
-            maquetas.append(maqueta)
+            maqueta = Maqueta(nombre, filas, columnas, entrada_fila, entrada_columna, estructura)
+            maquetas_cargadas.agregar(maqueta)
 
-            # Imprimir la información de la maqueta y sus objetivos
             print(f"\nMaqueta: {maqueta.nombre}")
             print(f"Filas: {maqueta.filas}")
             print(f"Columnas: {maqueta.columnas}")
             print(f"Entrada: ({maqueta.entrada_fila}, {maqueta.entrada_columna})")
             print("Objetivos:")
-            for objetivo in maqueta.objetivos:
-                print(f"  {objetivo.nombre} ({objetivo.fila}, {objetivo.columna})")
+            maqueta.objetivos.mostrar()
             print(f"Estructura:\n{maqueta.estructura}")
 
+        print(f"(Cada * representa una PARED y cada - representa un CAMINO)")
         print(f"\nSe cargó correctamente el archivo {nombre_archivo}")
+
     except Exception as e:
         print(f"Error al cargar el archivo {nombre_archivo}: {e}")
+
+
+def ver_maquetas_ordenadas():
+    lista_ordenada = maquetas_cargadas.obtener_lista_ordenada()
+    print("\nListado de maquetas ordenadas alfabéticamente:")
+    for maqueta in lista_ordenada:
+        print(f"- {maqueta.nombre}")
+
+def graficar_maquetas():
+    lista_ordenada = maquetas_cargadas.obtener_lista_ordenada()
+    for maqueta in lista_ordenada:
+        print(f"\nMaqueta: {maqueta.nombre}")
+        estructura = maqueta.estructura.split("\n")
+        for fila in estructura:
+            print(fila)
 
 while True:
     print("============================================================")
@@ -127,15 +153,14 @@ while True:
         cargar_archivo_xml(nombre_archivo)
 
     elif opcion == "b":
-        sub_opcion = input("Seleccione una opción:\n a. Ver listado de maquetas ordenado alfabéticamente\n b. Ver configuración de maqueta\n")
-
-        if sub_opcion == "a":
-            lista_pisos.mostrar_pisos_ordenados()
-        elif sub_opcion == "b":
-            nombre_maqueta = input("Ingrese el nombre de la maqueta: ")
-            lista_pisos.mostrar_configuracion_maqueta(nombre_maqueta)
+        print("\nGestión de maquetas:")
+        subopcion = input("Ingrese '1' para ver el listado de maquetas ordenadas alfabéticamente, o '2' para graficar las maquetas: ")
+        if subopcion == "1":
+            ver_maquetas_ordenadas()
+        elif subopcion == "2":
+            graficar_maquetas()
         else:
-            print("Opción no válida.")
+            print("Opción inválida.")
 
     elif opcion == "c":
         sub_opcion = input("Seleccione una opción:\n a. Ver gráficamente el camino para recolectar objetivos de una maqueta\n")
