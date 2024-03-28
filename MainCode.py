@@ -105,14 +105,24 @@ def cargar_archivo_xml(nombre_archivo):
                 continue
 
             maqueta = Maqueta(nombre, filas, columnas, entrada_fila, entrada_columna, estructura)
+
+            objetivos_elementos = maqueta_xml.findall('objetivos/objetivo')
+            objetivos_lista = []
+            for objetivo_xml in objetivos_elementos:
+                objetivo_nombre = objetivo_xml.find('nombre').text
+                objetivo_fila = int(objetivo_xml.find('fila').text)
+                objetivo_columna = int(objetivo_xml.find('columna').text)
+                objetivo = Objetivo(objetivo_nombre, objetivo_fila, objetivo_columna)
+                maqueta.objetivos.agregar(objetivo)
+                objetivos_lista.append(objetivo_nombre)
+
             maquetas_cargadas.agregar(maqueta)
 
             print(f"\nMaqueta: {maqueta.nombre}")
             print(f"Filas: {maqueta.filas}")
             print(f"Columnas: {maqueta.columnas}")
             print(f"Entrada: ({maqueta.entrada_fila}, {maqueta.entrada_columna})")
-            print("Objetivos:")
-            maqueta.objetivos.mostrar()
+            print(f"Objetivos: {', '.join(objetivos_lista)}")
             print(f"Estructura:\n{maqueta.estructura}")
 
         print(f"(Cada * representa una PARED y cada - representa un CAMINO)")
@@ -128,13 +138,6 @@ def ver_maquetas_ordenadas():
     for maqueta in lista_ordenada:
         print(f"- {maqueta.nombre}")
 
-def graficar_maquetas():
-    lista_ordenada = maquetas_cargadas.obtener_lista_ordenada()
-    for maqueta in lista_ordenada:
-        print(f"\nMaqueta: {maqueta.nombre}")
-        estructura = maqueta.estructura.split("\n")
-        for fila in estructura:
-            print(fila)
 
 while True:
     print("============================================================")
