@@ -1,5 +1,4 @@
 import xml.etree.ElementTree as ET
-import graphviz
 import os
 
 
@@ -7,6 +6,7 @@ class Nodo:
     def __init__(self, dato):
         self.dato = dato
         self.siguiente = None
+
 
 class ListaEnlazada:
     def __init__(self):
@@ -39,11 +39,13 @@ class ListaEnlazada:
             nodo_actual = nodo_actual.siguiente
         return lista_ordenada
 
+
 class Objetivo:
     def __init__(self, nombre, fila, columna):
         self.nombre = nombre
         self.fila = int(fila)
         self.columna = int(columna)
+
 
 class Maqueta:
     def __init__(self, nombre, filas, columnas, entrada_fila, entrada_columna, estructura):
@@ -60,6 +62,7 @@ class Maqueta:
 
     def obtener_lista_objetivos(self):
         return self.objetivos.obtener_lista_ordenada()
+
 
 def cargar_archivo_xml(nombre_archivo):
     maquetas_cargadas = ListaEnlazada()
@@ -78,30 +81,16 @@ def cargar_archivo_xml(nombre_archivo):
 
             filas = maqueta_xml.find('filas')
             if filas is not None and filas.text is not None:
-                filas = filas.text.strip()
+                filas = int(filas.text.strip())
             else:
                 print(f"Error: Las filas de la maqueta '{nombre}' no están definidas correctamente.")
                 continue
 
             columnas = maqueta_xml.find('columnas')
             if columnas is not None and columnas.text is not None:
-                columnas = columnas.text.strip()
+                columnas = int(columnas.text.strip())
             else:
                 print(f"Error: Las columnas de la maqueta '{nombre}' no están definidas correctamente.")
-                continue
-
-            entrada_fila = maqueta_xml.find('entrada/fila')
-            if entrada_fila is not None and entrada_fila.text is not None:
-                entrada_fila = entrada_fila.text.strip()
-            else:
-                print(f"Error: La fila de entrada de la maqueta '{nombre}' no está definida correctamente.")
-                continue
-
-            entrada_columna = maqueta_xml.find('entrada/columna')
-            if entrada_columna is not None and entrada_columna.text is not None:
-                entrada_columna = entrada_columna.text.strip()
-            else:
-                print(f"Error: La columna de entrada de la maqueta '{nombre}' no está definida correctamente.")
                 continue
 
             estructura = maqueta_xml.find('estructura')
@@ -111,7 +100,7 @@ def cargar_archivo_xml(nombre_archivo):
                 print(f"Error: La estructura de la maqueta '{nombre}' no está definida correctamente.")
                 continue
 
-            maqueta = Maqueta(nombre, filas, columnas, entrada_fila, entrada_columna, estructura)
+            maqueta = Maqueta(nombre, filas, columnas, 0, 0, estructura)
 
             objetivos_elementos = maqueta_xml.findall('objetivos/objetivo')
             objetivos_lista = ListaEnlazada()
@@ -128,63 +117,112 @@ def cargar_archivo_xml(nombre_archivo):
             print(f"\nMaqueta: {maqueta.nombre}")
             print(f"Filas: {maqueta.filas}")
             print(f"Columnas: {maqueta.columnas}")
-            print(f"Entrada: ({maqueta.entrada_fila}, {maqueta.entrada_columna})")
-            print("Objetivos: ", end="")
-            objetivos_lista.mostrar()
             print(f"Estructura:\n{maqueta.estructura}")
 
-        print(f"(Cada * representa una PARED y cada - representa un CAMINO)")
-        print(f"\nSe cargó correctamente el archivo {nombre_archivo}")
+        print(f"\nSe cargaron correctamente las maquetas del archivo {nombre_archivo}")
 
     except Exception as e:
         print(f"Error al cargar el archivo {nombre_archivo}: {e}")
 
     return maquetas_cargadas
 
-def graficar_maqueta(maqueta):
+
+def graficar_maqueta_con_graphviz(maqueta):
+    contenido = """
+    digraph G {
+    fontname="Helvetica,Arial,sans-serif"
+    graph [
+        rankdir = "LR"
+    ];
+    """
+
     filas = maqueta.filas
     columnas = maqueta.columnas
     estructura = maqueta.estructura.strip().replace(' ', '')
 
-    entrada_fila = maqueta.entrada_fila
-    entrada_columna = maqueta.entrada_columna
+    contenido_patron = estructura
 
-    objetivos = maqueta.obtener_lista_objetivos()
-
-    matriz = [[' ' for _ in range(columnas)] for _ in range(filas)]
-    estructura_index = 0
-    for i in range(filas):
-        for j in range(columnas):
-            if estructura[estructura_index] == '-':
-                matriz[i][j] = ' '
-            else:
-                matriz[i][j] = estructura[estructura_index]
-            estructura_index += 1
-
-    matriz[entrada_fila - 1][entrada_columna - 1] = 'E'  # Entrada
-
-    nodo_actual = objetivos.cabeza
-    while nodo_actual is not None:
-        objetivo = nodo_actual.dato
-        matriz[objetivo.fila - 1][objetivo.columna - 1] = objetivo.nombre
-        nodo_actual = nodo_actual.siguiente
-
-    # Imprimir la tabla
-    print(f"Maqueta: {maqueta.nombre}")
-    for fila in matriz:
-        print("".join(fila))
-
-    # Imprimir la leyenda
-    print("\nLeyenda:")
-    print("E: Entrada")
-    nodo_actual = objetivos.cabeza
-    while nodo_actual is not None:
-        objetivo = nodo_actual.dato
-        print(f"{objetivo.nombre}: Objetivo")
-        nodo_actual = nodo_actual.siguiente
-    print("*: Pared")
-    print("-: Camino")
+    contenido += f"""
+    // Nodo de la maqueta
+    node [shape=plaintext];
+    maqueta [label=<
+        <TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0">
+        """
     
+    for fila in range(filas):
+        contenido += "<TR>\n"
+        for columna in range(columnas):
+            letra = contenido_patron[(fila * columnas) + columna]
+            color = 'black' if letra == '*' else 'white'  # '*' representa una pared
+            contenido += f'<TD BGCOLOR="{color}">{color}</TD>\n'
+
+        contenido += "</TR>\n"
+    
+    contenido += """
+        </TABLE>
+    >];
+    """
+
+    # Agregar entrada
+    contenido += f"""
+    entrada [label=<
+        <TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0">
+        """
+    
+    for fila in range(filas):
+        contenido += "<TR>\n"
+        for columna in range(columnas):
+            if fila == maqueta.entrada_fila and columna == maqueta.entrada_columna:
+                contenido += '<TD BGCOLOR="green">E</TD>\n'  # E representa la entrada
+            else:
+                contenido += '<TD></TD>\n'
+
+        contenido += "</TR>\n"
+    
+    contenido += """
+        </TABLE>
+    >];
+    """
+
+    # Agregar objetivos
+    nodo_actual = maqueta.obtener_lista_objetivos().cabeza
+    while nodo_actual is not None:
+        objetivo = nodo_actual.dato
+        contenido += f"""
+        {objetivo.nombre} [label=<
+            <TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0">
+            """
+        
+        for fila in range(filas):
+            contenido += "<TR>\n"
+            for columna in range(columnas):
+                if fila == objetivo.fila and columna == objetivo.columna:
+                    contenido += f'<TD BGCOLOR="blue">{objetivo.nombre}</TD>\n'  # Objetivo
+                else:
+                    contenido += '<TD></TD>\n'
+
+            contenido += "</TR>\n"
+        
+        contenido += """
+            </TABLE>
+        >];
+        """
+
+        nodo_actual = nodo_actual.siguiente
+
+    contenido += "}\n"
+
+    nombre_archivo = "GraficoMaqueta"
+
+    with open(f"{nombre_archivo}.dot", "w") as archivo_dot:
+        archivo_dot.write(contenido)
+
+    comando_dot = f"dot -Tpdf {nombre_archivo}.dot -o {nombre_archivo}.pdf"
+    os.system(comando_dot)
+
+    print(f"Archivo PDF '{nombre_archivo}.pdf' creado satisfactoriamente.")
+
+
 def main():
     while True:
         print("============================================================")
@@ -207,7 +245,7 @@ def main():
             maqueta_encontrada = False
             while nodo_actual is not None:
                 if nodo_actual.dato.nombre.strip() == nombre_maqueta.strip():
-                    graficar_maqueta(nodo_actual.dato)
+                    graficar_maqueta_con_graphviz(nodo_actual.dato)
                     maqueta_encontrada = True
                     break
                 nodo_actual = nodo_actual.siguiente
@@ -220,6 +258,7 @@ def main():
 
         else:
             print("Opción no válida. Por favor, ingrese un número válido.")
+
 
 if __name__ == "__main__":
     main()
