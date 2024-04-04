@@ -138,9 +138,9 @@ def graficar_maqueta_con_graphviz(maqueta):
 
     filas = maqueta.filas
     columnas = maqueta.columnas
-    estructura = maqueta.estructura.strip().replace(' ', '')
+    estructura = maqueta.estructura.strip().split('\n')  # Separar la estructura en líneas
 
-    contenido_patron = estructura
+    contenido_patron = ''.join([line.strip() for line in estructura])  # Eliminar espacios y saltos de línea
 
     contenido += f"""
     // Nodo de la maqueta
@@ -149,6 +149,7 @@ def graficar_maqueta_con_graphviz(maqueta):
         <TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0">
         """
 
+    # Iterar sobre cada fila y cada columna de la maqueta
     for fila in range(filas):
         contenido += "<TR>\n"
         for columna in range(columnas):
@@ -180,6 +181,9 @@ def graficar_maqueta_con_graphviz(maqueta):
     os.system(comando_dot)
 
     print(f"Archivo PDF '{nombre_archivo}.pdf' creado satisfactoriamente.")
+
+
+
 
 
 def main():
