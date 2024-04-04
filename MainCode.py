@@ -148,7 +148,7 @@ def graficar_maqueta_con_graphviz(maqueta):
     maqueta [label=<
         <TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0">
         """
-    
+
     for fila in range(filas):
         contenido += "<TR>\n"
         for columna in range(columnas):
@@ -163,58 +163,11 @@ def graficar_maqueta_con_graphviz(maqueta):
                 raise ValueError("Carácter inválido en la estructura de la maqueta")
 
         contenido += "</TR>\n"
-    
+
     contenido += """
         </TABLE>
     >];
     """
-
-    # Agregar entrada
-    contenido += f"""
-    entrada [label=<
-        <TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0">
-        """
-    
-    for fila in range(filas):
-        contenido += "<TR>\n"
-        for columna in range(columnas):
-            if fila == maqueta.entrada_fila and columna == maqueta.entrada_columna:
-                contenido += '<TD BGCOLOR="green">E</TD>\n'  # E representa la entrada
-            else:
-                contenido += '<TD></TD>\n'
-
-        contenido += "</TR>\n"
-    
-    contenido += """
-        </TABLE>
-    >];
-    """
-
-    # Agregar objetivos
-    nodo_actual = maqueta.obtener_lista_objetivos().cabeza
-    while nodo_actual is not None:
-        objetivo = nodo_actual.dato
-        contenido += f"""
-        {objetivo.nombre} [label=<
-            <TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0">
-            """
-        
-        for fila in range(filas):
-            contenido += "<TR>\n"
-            for columna in range(columnas):
-                if fila == objetivo.fila and columna == objetivo.columna:
-                    contenido += f'<TD BGCOLOR="blue">{objetivo.nombre}</TD>\n'  # Objetivo
-                else:
-                    contenido += '<TD></TD>\n'
-
-            contenido += "</TR>\n"
-        
-        contenido += """
-            </TABLE>
-        >];
-        """
-
-        nodo_actual = nodo_actual.siguiente
 
     contenido += "}\n"
 
