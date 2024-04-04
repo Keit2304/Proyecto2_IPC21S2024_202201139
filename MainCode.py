@@ -153,8 +153,14 @@ def graficar_maqueta_con_graphviz(maqueta):
         contenido += "<TR>\n"
         for columna in range(columnas):
             letra = contenido_patron[(fila * columnas) + columna]
-            color = 'black' if letra == '*' else 'white'  # '*' representa una pared
-            contenido += f'<TD BGCOLOR="{color}">{color}</TD>\n'
+            if letra == '*':
+                color = 'black'  # '*' representa una pared
+                contenido += f'<TD BGCOLOR="{color}"></TD>\n'
+            elif letra == '-':
+                color = 'white'  # '-' representa espacio en blanco
+                contenido += f'<TD BGCOLOR="{color}"></TD>\n'
+            else:
+                raise ValueError("Carácter inválido en la estructura de la maqueta")
 
         contenido += "</TR>\n"
     
