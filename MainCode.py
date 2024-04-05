@@ -1,12 +1,10 @@
 import xml.etree.ElementTree as ET
 import os
 
-
 class Nodo:
     def __init__(self, dato):
         self.dato = dato
         self.siguiente = None
-
 
 class ListaEnlazada:
     def __init__(self):
@@ -39,13 +37,11 @@ class ListaEnlazada:
             nodo_actual = nodo_actual.siguiente
         return lista_ordenada
 
-
 class Objetivo:
     def __init__(self, nombre, fila, columna):
         self.nombre = nombre
         self.fila = int(fila)
         self.columna = int(columna)
-
 
 class Maqueta:
     def __init__(self, nombre, filas, columnas, entrada_fila, entrada_columna, estructura):
@@ -62,7 +58,6 @@ class Maqueta:
 
     def obtener_lista_objetivos(self):
         return self.objetivos.obtener_lista_ordenada()
-
 
 def cargar_archivo_xml(nombre_archivo):
     maquetas_cargadas = ListaEnlazada()
@@ -100,7 +95,21 @@ def cargar_archivo_xml(nombre_archivo):
                 print(f"Error: La estructura de la maqueta '{nombre}' no está definida correctamente.")
                 continue
 
-            maqueta = Maqueta(nombre, filas, columnas, 0, 0, estructura)
+            entrada_fila = maqueta_xml.find('entrada/fila')
+            if entrada_fila is not None and entrada_fila.text is not None:
+                entrada_fila = int(entrada_fila.text.strip())
+            else:
+                print(f"Error: La fila de entrada de la maqueta '{nombre}' no está definida correctamente.")
+                continue
+
+            entrada_columna = maqueta_xml.find('entrada/columna')
+            if entrada_columna is not None and entrada_columna.text is not None:
+                entrada_columna = int(entrada_columna.text.strip())
+            else:
+                print(f"Error: La columna de entrada de la maqueta '{nombre}' no está definida correctamente.")
+                continue
+
+            maqueta = Maqueta(nombre, filas, columnas, entrada_fila, entrada_columna, estructura)
 
             objetivos_elementos = maqueta_xml.findall('objetivos/objetivo')
             objetivos_lista = ListaEnlazada()
@@ -126,7 +135,6 @@ def cargar_archivo_xml(nombre_archivo):
 
     return maquetas_cargadas
 
-
 def graficar_maqueta_con_graphviz(maqueta):
     contenido = """
     digraph G {
@@ -139,14 +147,20 @@ def graficar_maqueta_con_graphviz(maqueta):
     filas = maqueta.filas
     columnas = maqueta.columnas
     estructura = maqueta.estructura.strip().split('\n')  # Separar la estructura en líneas
-
     contenido_patron = ''.join([line.strip() for line in estructura])  # Eliminar espacios y saltos de línea
+
+    objetivos_dict = {}
+    nodo_actual = maqueta.objetivos.cabeza
+    while nodo_actual is not None:
+        objetivo = nodo_actual.dato
+        objetivos_dict[(objetivo.fila, objetivo.columna)] = objetivo.nombre
+        nodo_actual = nodo_actual.siguiente
 
     contenido += f"""
     // Nodo de la maqueta
     node [shape=plaintext];
     maqueta [label=<
-        <TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0">
+        <TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="4">
         """
 
     # Iterar sobre cada fila y cada columna de la maqueta
@@ -154,15 +168,20 @@ def graficar_maqueta_con_graphviz(maqueta):
         contenido += "<TR>\n"
         for columna in range(columnas):
             letra = contenido_patron[(fila * columnas) + columna]
-            if letra == '*':
+            if (fila, columna) == (maqueta.entrada_fila, maqueta.entrada_columna):
+                color = 'green'  # Color para la entrada
+                contenido += f'<TD BGCOLOR="{color}">E</TD>\n'
+            elif (fila, columna) in objetivos_dict:
+                color = 'pink'  # Color para los objetivos
+                contenido += f'<TD BGCOLOR="{color}">{objetivos_dict[(fila, columna)]}</TD>\n'
+            elif letra == '*':
                 color = 'black'  # '*' representa una pared
-                contenido += f'<TD BGCOLOR="{color}"></TD>\n'
+                contenido += f'<TD BGCOLOR="{color}">&nbsp;</TD>\n'
             elif letra == '-':
                 color = 'white'  # '-' representa espacio en blanco
-                contenido += f'<TD BGCOLOR="{color}"></TD>\n'
+                contenido += f'<TD BGCOLOR="{color}">&nbsp;</TD>\n'
             else:
                 raise ValueError("Carácter inválido en la estructura de la maqueta")
-
         contenido += "</TR>\n"
 
     contenido += """
@@ -181,9 +200,6 @@ def graficar_maqueta_con_graphviz(maqueta):
     os.system(comando_dot)
 
     print(f"Archivo PDF '{nombre_archivo}.pdf' creado satisfactoriamente.")
-
-
-
 
 
 def main():
