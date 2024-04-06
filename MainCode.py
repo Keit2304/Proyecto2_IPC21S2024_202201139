@@ -113,14 +113,12 @@ def cargar_archivo_xml(nombre_archivo):
             maqueta = Maqueta(nombre, filas, columnas, entrada_fila, entrada_columna, estructura)
 
             objetivos_elementos = maqueta_xml.findall('objetivos/objetivo')
-            objetivos_lista = ListaEnlazada()
             for objetivo_xml in objetivos_elementos:
                 objetivo_nombre = objetivo_xml.find('nombre').text.strip()
                 objetivo_fila = int(objetivo_xml.find('fila').text.strip())
                 objetivo_columna = int(objetivo_xml.find('columna').text.strip())
                 objetivo = Objetivo(objetivo_nombre, objetivo_fila, objetivo_columna)
                 maqueta.agregar_objetivo(objetivo)
-                objetivos_lista.agregar(objetivo_nombre)
 
             maquetas_cargadas.agregar(maqueta)
 
@@ -208,7 +206,7 @@ def resolucion_maqueta(maqueta):
     estructura = maqueta.estructura.strip().split('\n')
     contenido_patron = ''.join([line.strip() for line in estructura])
 
-    objetivos_orden = []
+    objetivos_orden = deque()
     nodo_actual = maqueta.objetivos.cabeza
     while nodo_actual is not None:
         objetivo = nodo_actual.dato
@@ -244,7 +242,7 @@ def encontrar_camino(contenido_patron, filas, columnas, inicio, objetivos_orden)
 
         if objetivos_orden and posicion_actual == objetivos_orden[0]:
             camino_actual_copia.append(posicion_actual)
-            objetivos_orden.pop(0)
+            objetivos_orden.popleft()
 
         if not objetivos_orden:
             return camino_actual_copia
